@@ -35,3 +35,6 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### Igone secret properties files ###
+**/src/main/**/secrets.properties
