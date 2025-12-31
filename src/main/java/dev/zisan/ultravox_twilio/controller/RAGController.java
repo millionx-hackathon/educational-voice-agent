@@ -23,16 +23,18 @@ public class RAGController {
     /**
      * RAG endpoint called by Ultravox during conversation.
      * Ultravox sends the student's question here to get textbook-based answers.
+     * 
+     * Returns the answer in "result" field which Ultravox reads as the tool output.
      */
     @PostMapping("/query")
-    public ResponseEntity<Map<String, String>> query(@RequestBody Map<String, String> request) {
+    public ResponseEntity<Map<String, Object>> query(@RequestBody Map<String, String> request) {
 
         String question = request.get("question");
 
         if (question == null || question.isBlank()) {
             log.warn("RAG query called with empty question");
             return ResponseEntity.badRequest().body(Map.of(
-                    "error", "Question is required"));
+                    "result", "No question was provided. Please ask a specific question."));
         }
 
         log.info("RAG tool called by Ultravox - Question: {}", question);
@@ -41,17 +43,17 @@ public class RAGController {
             String answer = ragService.answerQuestion(question);
 
             log.info("RAG response generated, length: {} chars", answer.length());
+            log.debug("RAG answer content: {}", answer);
 
+            // Ultravox expects the tool output in a "result" field
             return ResponseEntity.ok(Map.of(
-                    "answer", answer,
-                    "source", "textbook"));
+                    "result", answer));
 
         } catch (Exception e) {
             log.error("Error in RAG query", e);
-            return ResponseEntity.internalServerError()
-                    .body(Map.of(
-                            "error", "Unable to find answer in textbook",
-                            "details", e.getMessage()));
+            return ResponseEntity.ok(Map.of(
+                    "result",
+                    "I couldn't find information about that in the textbook. Please try asking in a different way."));
         }
     }
 }
